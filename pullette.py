@@ -1,8 +1,6 @@
 import math
 import random
-import numpy
-from numpy import sin, cos
-
+from math import sin, cos, pi
 import pyxel
 
 SCREEN_WIDTH = 256
@@ -10,7 +8,6 @@ SCREEN_HEIGHT = 256
 BULLET_MAX = 4096
 MYSPEED = 1
 pal = [0xF8F5E5, 0xE1DECC, 0x291B17, 0x754D42, 0x1D4F7A, 0x3080C7, 0x2A7C9B, 0x46B3C2, 0x9678b6, 0x907fbe, 0x7e90ce, 0x66a6d9, 0x5dbada, 0x6dcbd4, 0x83d5ce, 0x8dd9cc]
-pi = math.pi
 
 class App:
     def __init__(self):
@@ -63,36 +60,41 @@ class App:
                 if self.me.me_y > 0:
                     self.me.update(self.me.me_x, self.me.me_y-self.me.me_v, self.me.me_v)
 
-    def spiral(self, x, y, n, l, c):
-        t = math.pi*l/n
-        newb = Bullet(x, y, 1, t, 2, c)
+    def spiral(self, x, y, n, l, col):
+        t = pi*l/n
+        newb = Bullet(x, y, 1, t, 2, col)
         self.bullets.append(newb)
 
     def gswirl(self, x, y, n, m, l):
-        t = [math.pi*((l/n)+(f/m))*2 for f in range(m)]
-        newbs = [Bullet(x, y, 1, angle, 1, (l%8)+8) for angle in t]
+        t = [pi*((l/n)+(f/m))*2 for f in range(m)]
+        if self.randvar.c%3 == 0:
+            newbs = [Bullet(x, y, 1, angle, 1, (l%8)+8) for angle in t]
+        elif self.randvar.c%3 == 1:
+            newbs = [Bullet(x, y, 1, angle, 1, round(11.5+3.5*sin(pyxel.frame_count/60*2*pi))) for angle in t]
+        else:
+            newbs = [Bullet(x, y, 1, angle, 1, 1+(l%2)) for angle in t]
         for i in newbs:
                 self.bullets.append(i)
 
-    def nway(self, x, y, f, v, c):
-        t = [math.pi*(g/f)*2 for g in range(f)]
-        newbs = [Bullet(x, y, v, angle, 2, c) for angle in t]
+    def nway(self, x, y, f, v, col):
+        t = [pi*(g/f)*2 for g in range(f)]
+        newbs = [Bullet(x, y, v, angle, 2, col) for angle in t]
         for i in newbs:
                 self.bullets.append(i)
 
-    def swirl(self, x, y, n, m, l, c):
-        t = [math.pi*((l/n)+(f/m))*2 for f in range(m)]
-        newbs = [Bullet(x, y, 1, angle, 3, c) for angle in t]
+    def swirl(self, x, y, n, m, l, col):
+        t = [pi*((l/n)+(f/m))*2 for f in range(m)]
+        newbs = [Bullet(x, y, 1, angle, 3, col) for angle in t]
         for i in newbs:
                 self.bullets.append(i)
     
-    def circle(self, x, y, f, c, s):
-        newbs = [Bullet(x, y, 1, math.pi/f*n*2, s, c) for n in range(f)]
+    def circle(self, x, y, f, col, s):
+        newbs = [Bullet(x, y, 1, pi/f*n*2, s, col) for n in range(f)]
         for i in newbs:
             self.bullets.append(i)
 
     def surround(self, x, y, f, l, dt):
-        angle = 2*math.pi/f
+        angle = 2*pi/f
         newbs = [Bullet(x+l*cos(angle*n+dt), y+l*sin(angle*n+dt), 0, angle*n+dt, 1, 1) for n in range(f)]
         for i in newbs:
             self.bullets.append(i)
@@ -100,57 +102,77 @@ class App:
     def troch(self, a, b, e, col):
         d = 512
         p = pi*12
-        newbs = [Bullet(self.mother.mom_x+24*((a-b)*math.sin(p/d*n)+e*math.cos((a-b)/b*p/d*n)), 
-                self.mother.mom_y+24*((a-b)*math.cos(p/d*n)-e*math.sin((a-b)/b*p/d*n)),
-                1, p/d*n*2, 0, col) for n in range(d)]
+        if self.randvar.c%2 == 0:
+            newbs = [Bullet(self.mother.mom_x+24*((a-b)*sin(p/d*n)+e*cos((a-b)/b*p/d*n)), 
+                    self.mother.mom_y+24*((a-b)*cos(p/d*n)-e*sin((a-b)/b*p/d*n)),
+                    1, p/d*n*2, 0, round(n/24)%8+8) for n in range(d)]
+        else:
+            newbs = [Bullet(self.mother.mom_x+24*((a-b)*sin(p/d*n)+e*cos((a-b)/b*p/d*n)), 
+                    self.mother.mom_y+24*((a-b)*cos(p/d*n)-e*sin((a-b)/b*p/d*n)),
+                    1, p/d*n*2, 0, col) for n in range(d)]
         for i in newbs:
             self.bullets.append(i)
 
-    def troch_d(self, a, b, e, col):
+    def troch_d(self, a, b, e, col, l):
         p = pi*24*l
-        newb = Bullet(self.mother.mom_x+24*((a-b)*math.sin(p)+e*math.cos((a-b)/b*p)), 
-                self.mother.mom_y+24*((a-b)*math.cos(p)-e*math.sin((a-b)/b*p)),
+        newb = Bullet(self.mother.mom_x+24*((a-b)*sin(p)+e*cos((a-b)/b*p)), 
+                self.mother.mom_y+24*((a-b)*cos(p)-e*sin((a-b)/b*p)),
                 1, p*2, 0, col)
         self.bullets.append(newb)
 
     def epitroch(self, a, b, e, col):
         d = 512
         p = pi*12
-        newbs = [Bullet(self.mother.mom_x+24*((a+b)*math.sin(p/d*n)-e*math.cos((a+b)/b*p/d*n)), 
-                self.mother.mom_y+24*((a+b)*math.cos(p/d*n)-e*math.sin((a+b)/b*p/d*n)),
-                1, p/d*n*2, 0, col) for n in range(d)]
+        if self.randvar.c%2 == 0:
+            newbs = [Bullet(self.mother.mom_x+24*((a+b)*sin(p/d*n)-e*cos((a+b)/b*p/d*n)), 
+                    self.mother.mom_y+24*((a+b)*cos(p/d*n)-e*sin((a+b)/b*p/d*n)),
+                    1, p/d*n*2, 0, round(n/24)%8+8) for n in range(d)]
+        else:
+            newbs = [Bullet(self.mother.mom_x+24*((a+b)*sin(p/d*n)-e*cos((a+b)/b*p/d*n)), 
+                    self.mother.mom_y+24*((a+b)*cos(p/d*n)-e*sin((a+b)/b*p/d*n)),
+                    1, p/d*n*2, 0, col) for n in range(d)]
         for i in newbs:
             self.bullets.append(i)
 
     def epitroch_d(self, a, b, e, col, l):
         p = pi*24*l
-        newb = Bullet(self.mother.mom_x+24*((a+b)*math.sin(p)-e*math.cos((a+b)/b*p)), 
-                self.mother.mom_y+24*((a+b)*math.cos(p)-e*math.sin((a+b)/b*p)),
+        newb = Bullet(self.mother.mom_x+24*((a+b)*sin(p)-e*cos((a+b)/b*p)), 
+                self.mother.mom_y+24*((a+b)*cos(p)-e*sin((a+b)/b*p)),
                 1, p*2, 0, col)
         self.bullets.append(newb)
 
     def lissa(self, a, b, c, d, col):
         f = 256
         p = pi*8
-        newbs = [Bullet(self.mother.mom_x+a*math.sin(p/f*n*c), 
-                self.mother.mom_y+b*math.cos(p/f*n*d),
-                1, p/f*n*2, 1, col) for n in range(f)]
+        if self.randvar.e%2 == 0:
+            newbs = [Bullet(self.mother.mom_x+a*sin(p/f*n*c), 
+                    self.mother.mom_y+b*cos(p/f*n*d),
+                    1, p/f*n*2, 1, n%8+8) for n in range(f)]
+        else:
+            newbs = [Bullet(self.mother.mom_x+a*sin(p/f*n*c), 
+                    self.mother.mom_y+b*cos(p/f*n*d),
+                    1, p/f*n*2, 1, col) for n in range(f)]
         for i in newbs:
             self.bullets.append(i)
 
     def lissa_d(self, a, b, c, d, col, l):
         p = pi*8*l
-        newb = Bullet(self.mother.mom_x+a*math.sin(p*c*l), 
-                self.mother.mom_y+b*math.cos(p*d*l),
+        newb = Bullet(self.mother.mom_x+a*sin(p*c*l), 
+                self.mother.mom_y+b*cos(p*d*l),
                 0, p*2*l, 0, col)
         self.bullets.append(newb)
 
     def rose(self, a, b, col):
         c = 512
         p = pi*16
-        newbs = [Bullet(self.mother.mom_x+36*(math.sin(a/b*p/c*n)*math.cos(p/c*n)), 
-                self.mother.mom_y-36*(math.sin(a/b*p/c*n)*math.sin(p/c*n)),
-                1, p/c*n*2, 0, col) for n in range(c)]
+        if self.randvar.e%2 == 0:
+            newbs = [Bullet(self.mother.mom_x+36*(sin(a/b*p/c*n)*cos(p/c*n)), 
+                    self.mother.mom_y-36*(sin(a/b*p/c*n)*sin(p/c*n)),
+                    1, p/c*n*2, 0, col) for n in range(c)]
+        else:
+            newbs = [Bullet(self.mother.mom_x+36*(sin(a/b*p/c*n)*cos(p/c*n)), 
+                    self.mother.mom_y-36*(sin(a/b*p/c*n)*sin(p/c*n)),
+                    1, p/c*n*2, 0, round(n/2)%8+8) for n in range(c)]
         for i in newbs:
             self.bullets.append(i)
 
@@ -159,16 +181,21 @@ class App:
         p = pi*dt
         if a == b:
             c = 128
-        newbs = [Bullet(self.mother.mom_x+36*(math.sin(a/b*p/c*n)*math.cos(a/b*p/c*n)), 
-                self.mother.mom_y-18+36*(math.sin(a/b*p/c*n)*math.sin(a/b*p/c*n)),
-                1, p/c*n*2, 0, col) for n in range(c)]
+        if self.randvar.e%2 == 0:
+            newbs = [Bullet(self.mother.mom_x+36*(sin(a/b*p/c*n)*cos(a/b*p/c*n)), 
+                    self.mother.mom_y-18+36*(sin(a/b*p/c*n)*sin(a/b*p/c*n)),
+                    1, p/c*n*2, 0, round(n/dt)%8+8) for n in range(c)]
+        else:
+            newbs = [Bullet(self.mother.mom_x+36*(sin(a/b*p/c*n)*cos(a/b*p/c*n)), 
+                    self.mother.mom_y-18+36*(sin(a/b*p/c*n)*sin(a/b*p/c*n)),
+                    1, p/c*n*2, 0, col) for n in range(c)]
         for i in newbs:
             self.bullets.append(i)
 
     def rose_d(self, a, b, col, l):
         p = pi*8*l
-        newb = Bullet(self.mother.mom_x+48*(math.sin(a/b*p)*math.cos(p)), 
-                self.mother.mom_y+48*(math.sin(a/b*p)*math.sin(p)),
+        newb = Bullet(self.mother.mom_x+48*(sin(a/b*p)*cos(p)), 
+                self.mother.mom_y+48*(sin(a/b*p)*sin(p)),
                 1, p*2, 0, col)
         self.bullets.append(newb)
 
@@ -200,12 +227,16 @@ class App:
                     l = self.mother.loop
                     n = self.randvar.drand
                     m = self.randvar.c
-                    self.swirl(self.mother.mom_x, self.mother.mom_y, n, m, l, 2)
-                    self.mother.loop += 1
+                    if self.randvar.d % 2 == 0:
+                        self.swirl(self.mother.mom_x, self.mother.mom_y, n, m, l, round(11.5+3.5*sin(self.mother.loop/60*2*pi)))
+                    else:
+                        self.swirl(self.mother.mom_x, self.mother.mom_y, n, m, l, round(1.5+0.5*sin(self.mother.loop/60*2*pi)))
                     for i in self.bullets:
                         if i.new and i.count < 150:
-                            i.anglectr(i.t+self.randvar.dt)
-                            i.speedctr(i.v+self.randvar.dv)
+                            i.v = 0.8+(i.count/self.randvar.itv)*self.randvar.dv
+                            i.t = i.t+self.randvar.dt
+#                            i.anglectr(i.t+self.randvar.dt)
+#                            i.speedctr(i.v+self.randvar.dv)
                     self.mother.loop += 1
             if self.mother.spell == 2:
                 eh = self.randvar.c
@@ -214,15 +245,15 @@ class App:
                 e = self.randvar.e/10
                 col = self.randvar.color
                 if self.randvar.g % 2 == 0:
-                    if self.mother.count % 90 == 60:
-                        if eh == 0:
+                    if self.mother.count % 90 == 30:
+                        if eh % 2 == 0:
                             self.troch(a, b, e, col)
                         else:
                             self.epitroch(a, b, e, col)
                 else:
                     l = self.mother.loop/512
                     r = -l
-                    if eh == 0:
+                    if eh % 2 == 0:
                         self.troch_d(a, b, e, col, l)
                         self.troch_d(a, b, e, col, r)
                         self.troch_d(a, b, e, col, l+1/2)
@@ -236,7 +267,7 @@ class App:
                         if i.new:
                             if i.count == 0:
                                 i.no = self.mother.loop
-                                i.col = i.no%8+8
+                                i.col = round(i.no/6)%8+8
                                 i.size = 1
                             else:
                                 i.size = 0
@@ -302,13 +333,18 @@ class App:
             if self.mother.spell == 5:
                 itv = math.ceil(self.randvar.itv/2)
                 if self.mother.count % itv == 0:
-                    c = self.randvar.color
+                    if self.randvar.d % 3 == 0:
+                        col = round(11.5+3.5*sin(self.mother.loop/60*2*pi))
+                    elif self.randvar.d % 3 == 1:
+                        col = round(math.ceil(self.randvar.c/2)*2+0.5+0.5*sin((self.mother.loop+1)/60*2*pi))
+                    else:
+                        col = self.randvar.color
                     m = self.randvar.frand
                     l = self.mother.loop
                     v = math.floor(self.randvar.c/3)
                     if v == 0:
                         v = 1 
-                    self.nway(self.mother.mom_x, self.mother.mom_y, m, v, c)
+                    self.nway(self.mother.mom_x, self.mother.mom_y, m, v, col)
                     remb = []
                     for i in self.bullets:
                         if i.count == 0:
@@ -330,10 +366,10 @@ class App:
                     self.mother.loop += 1
             if self.mother.spell == 6:
                 if self.mother.count % self.randvar.itv == 0:
-                    c = self.mother.loop%8+8
+                    col = self.mother.loop%8+8
                     m = self.randvar.frand
-                    dt = 2*math.pi*(self.randvar.a/self.randvar.b)*math.sin(self.mother.loop*self.randvar.dt)
-                    self.nway(self.mother.mom_x, self.mother.mom_y, m, 1, c)
+                    dt = 2*pi*(self.randvar.a/self.randvar.b)*sin(self.mother.loop*self.randvar.dt)
+                    self.nway(self.mother.mom_x, self.mother.mom_y, m, 1, col)
                     for i in self.bullets:
                         if i.count == 0:
                             i.size = 1
@@ -352,25 +388,25 @@ class App:
                 f = self.randvar.frand
                 l = self.randvar.c*24
                 itv = self.randvar.itv+1
-                d = 2*math.pi/math.ceil(2*math.pi/self.randvar.dt)
+                d = 2*pi/math.ceil(2*pi/self.randvar.dt)
                 dt = d*self.mother.loop
                 remb = []
                 if self.randvar.g < 12:
                     g = 0
                 else:
-                    g = 2*math.pi/self.randvar.g
-                waittime = math.ceil((2*math.pi/f)/d)*itv
+                    g = 2*pi/self.randvar.g
+                waittime = math.ceil((2*pi/f)/d)*itv
                 if self.mother.count % itv == 0:
                     self.surround(x, y, f, l, dt)
                     self.surround(x, y, f, l, -dt)
                     for i in self.bullets:
                         if i.count == 0:
                             i.no = self.mother.loop
-                            i.t = i.t+math.pi+g
+                            i.t = i.t+pi+g
                         if i.count > waittime:
                             i.v = 1
                             i.col = 6
-                        if i.count - waittime > l*math.cos(g):
+                        if i.count - waittime > l*cos(g):
                             i.col = 7
                     self.bullets.reverse()
                     self.mother.loop += 1
@@ -399,85 +435,86 @@ class App:
             self.start = False
             self.view = True
 
-        if pyxel.btnp(pyxel.KEY_0):
-            self.mother.update()
-            self.randvar.update()
-            self.mother.spell = 0
-            self.mother.count = 1
-            self.bullets = []
-            self.miss = 0
+        if not pyxel.btn(pyxel.KEY_ALT):
+            if pyxel.btnp(pyxel.KEY_0):
+                self.mother.update()
+                self.randvar.update()
+                self.mother.spell = 0
+                self.mother.count = 1
+                self.bullets = []
+                self.miss = 0
 
-        if pyxel.btnp(pyxel.KEY_1):
-            self.mother.update()
-            self.randvar.update()
-            self.mother.spell = 1
-            self.mother.count = 1
-            self.bullets = []
-            self.miss = 0
+            if pyxel.btnp(pyxel.KEY_1):
+                self.mother.update()
+                self.randvar.update()
+                self.mother.spell = 1
+                self.mother.count = 1
+                self.bullets = []
+                self.miss = 0
 
-        if pyxel.btnp(pyxel.KEY_2):
-            self.mother.update()
-            self.randvar.update()
-            self.mother.spell = 2
-            self.mother.count = 1
-            self.bullets = []
-            self.miss = 0
+            if pyxel.btnp(pyxel.KEY_2):
+                self.mother.update()
+                self.randvar.update()
+                self.mother.spell = 2
+                self.mother.count = 1
+                self.bullets = []
+                self.miss = 0
 
-        if pyxel.btnp(pyxel.KEY_3):
-            self.mother.update()
-            self.randvar.update()
-            self.mother.spell = 3
-            self.mother.count = 1
-            self.bullets = []
-            self.miss = 0
+            if pyxel.btnp(pyxel.KEY_3):
+                self.mother.update()
+                self.randvar.update()
+                self.mother.spell = 3
+                self.mother.count = 1
+                self.bullets = []
+                self.miss = 0
 
-        if pyxel.btnp(pyxel.KEY_4):
-            self.mother.update()
-            self.randvar.update()
-            self.mother.spell = 4
-            self.mother.count = 1
-            self.bullets = []
-            self.miss = 0
+            if pyxel.btnp(pyxel.KEY_4):
+                self.mother.update()
+                self.randvar.update()
+                self.mother.spell = 4
+                self.mother.count = 1
+                self.bullets = []
+                self.miss = 0
 
-        if pyxel.btnp(pyxel.KEY_5):
-            self.mother.update()
-            self.randvar.update()
-            self.mother.spell = 5
-            self.mother.count = 1
-            self.bullets = []
-            self.miss = 0
+            if pyxel.btnp(pyxel.KEY_5):
+                self.mother.update()
+                self.randvar.update()
+                self.mother.spell = 5
+                self.mother.count = 1
+                self.bullets = []
+                self.miss = 0
 
-        if pyxel.btnp(pyxel.KEY_6):
-            self.mother.update()
-            self.randvar.update()
-            self.mother.spell = 6
-            self.mother.count = 1
-            self.bullets = []
-            self.miss = 0
+            if pyxel.btnp(pyxel.KEY_6):
+                self.mother.update()
+                self.randvar.update()
+                self.mother.spell = 6
+                self.mother.count = 1
+                self.bullets = []
+                self.miss = 0
 
-        if pyxel.btnp(pyxel.KEY_7):
-            self.mother.update()
-            self.randvar.update()
-            self.mother.spell = 7
-            self.mother.count = 1
-            self.bullets = []
-            self.miss = 0
+            if pyxel.btnp(pyxel.KEY_7):
+                self.mother.update()
+                self.randvar.update()
+                self.mother.spell = 7
+                self.mother.count = 1
+                self.bullets = []
+                self.miss = 0
 
-        if pyxel.btnp(pyxel.KEY_8):
-            self.mother.update()
-            self.randvar.update()
-            self.mother.spell = 8
-            self.mother.count = 1
-            self.bullets = []
-            self.miss = 0
+            if pyxel.btnp(pyxel.KEY_8):
+                self.mother.update()
+                self.randvar.update()
+                self.mother.spell = 8
+                self.mother.count = 1
+                self.bullets = []
+                self.miss = 0
 
-        if pyxel.btnp(pyxel.KEY_9):
-            self.mother.update()
-            self.randvar.update()
-            self.mother.spell = 9
-            self.mother.count = 1
-            self.bullets = []
-            self.miss = 0
+            if pyxel.btnp(pyxel.KEY_9):
+                self.mother.update()
+                self.randvar.update()
+                self.mother.spell = 9
+                self.mother.count = 1
+                self.bullets = []
+                self.miss = 0
 
         if not self.start:
             self.mymove()
@@ -507,9 +544,7 @@ class App:
     def draw(self):
         pyxel.cls(0)
         if self.start:
-            c = round(11+4*math.sin(pyxel.frame_count/60*2*math.pi))
-            if c == 7:
-                c = 8
+            c = round(11.5+3.5*sin(pyxel.frame_count/120*2*pi))
             pyxel.text(113, 65, "Pullette", 1)
             pyxel.text(112, 64, "Pullette", c)
             pyxel.text(82, 72, "-bullet hell simulator-", 1)
@@ -526,7 +561,7 @@ class App:
                 pyxel.circ(i.x, i.y, i.size, i.col)
             if not self.view:
                 pyxel.blt(self.mother.mom_x-8, 
-                self.mother.mom_y-8+round(4*math.sin(pyxel.frame_count/120*2*math.pi)), 
+                self.mother.mom_y-8+round(4*sin(pyxel.frame_count/120*2*pi)), 
                 1, 0, 0, 16, 16, 0)
             if self.wait:
                 self.draw_caption()
@@ -555,7 +590,7 @@ class App:
         if self.mother.spell == 1:
             pyxel.text(4, 12, "source angle:{}".format(self.randvar.c), subc)
             pyxel.text(4, 20, "source angle diff:1/{}*2pi".format(self.randvar.drand), subc)
-            pyxel.text(4, 28, "bullet angle diff:1/{:.0f}*2pi".format((2*math.pi)/self.randvar.dt), subc)
+            pyxel.text(4, 28, "bullet angle diff:1/{:.0f}*2pi".format((2*pi)/self.randvar.dt), subc)
             pyxel.text(4, 36, "bullet velocity diff:1/{:.0f}".format(1/self.randvar.dv), subc)
             pyxel.text(4, 44, "update interval:{}f".format(self.randvar.itv), subc)
             pyxel.text(4, 52, "stop update:150f", subc)
@@ -589,14 +624,14 @@ class App:
                 v = 1 
             pyxel.text(4, 12, "n:{}".format(self.randvar.frand), subc)
             pyxel.text(4, 20, "bullet velocity:{:.0f}".format(v), subc)
-            pyxel.text(4, 28, "bullet angle diff:1/{:.0f}*2pi".format((2*math.pi)/self.randvar.dt*200), subc)
+            pyxel.text(4, 28, "bullet angle diff:1/{:.0f}*2pi".format((2*pi)/self.randvar.dt*200), subc)
             pyxel.text(4, 36, "update interval:{}f".format(math.ceil(self.randvar.itv/2)), subc)
             pyxel.text(4, 44, "stop update:100f", subc)
         if self.mother.spell == 6:
             pyxel.text(4, 12, "n:{}".format(self.randvar.frand), subc)
             pyxel.text(4, 20, "a:{0}/{1}".format(self.randvar.a, self.randvar.b), subc)
-            pyxel.text(4, 28, "b:1/{}".format(round(2*math.pi/self.randvar.dt)), subc)
-            pyxel.text(4, 36, "bullet angle:({0}/{1})*2pi*sin(t/{2}*2pi)".format(self.randvar.a, self.randvar.b, round(2*math.pi/self.randvar.dt)), subc)
+            pyxel.text(4, 28, "b:1/{}".format(round(2*pi/self.randvar.dt)), subc)
+            pyxel.text(4, 36, "bullet angle:({0}/{1})*2pi*sin(t/{2}*2pi)".format(self.randvar.a, self.randvar.b, round(2*pi/self.randvar.dt)), subc)
         if self.mother.spell == 7:
             pyxel.text(4, 12, "a:{}".format(self.randvar.a), subc)
             pyxel.text(4, 20, "b:{}".format(self.randvar.b), subc)
@@ -607,7 +642,7 @@ class App:
             pyxel.text(4, 12, "corner:{}".format(self.randvar.frand), subc)
             pyxel.text(4, 20, "radius:{}".format(self.randvar.c*24), subc)
             pyxel.text(4, 28, "angle diff to center:2pi*1/{}".format(self.randvar.g), subc)        
-            pyxel.text(4, 36, "angle diff of rotation:2pi*1/{}".format(math.ceil(2*math.pi/self.randvar.dt)), subc)
+            pyxel.text(4, 36, "angle diff of rotation:2pi*1/{}".format(math.ceil(2*pi/self.randvar.dt)), subc)
             pyxel.text(4, 44, "shooting interval:{}f".format(self.randvar.itv+1), subc)    
 
 class Mother:
@@ -620,7 +655,7 @@ class Mother:
         self.spellno = 0
     def update(self):
         self.count = 0
-        self.spell = random.randint(0, 6)
+        self.spell = random.randint(0, 8)
         self.spellno += 1
         self.loop = 0
 
@@ -629,28 +664,28 @@ class Randvar:
         self.drand = random.randint(12, 60)
         self.frand = random.randint(3, 12)
         self.itv = random.randint(1, 6)
-        self.a = random.randint(1, 16)
-        self.b = random.randint(1, 16)
+        self.a = random.randint(1, 24)
+        self.b = random.randint(1, 24)
         self.c = random.randint(1, 6)
         self.d = random.randint(1, 6)
         self.e = random.randint(1, 16)
         self.g = random.randint(1, 36)
         self.color = random.randint(2, 15)
-        self.dt = 2*math.pi/random.randint(24, 72)
-        self.dv = 1/random.randint(20, 50)
+        self.dt = 2*pi/random.randint(24, 72)
+        self.dv = 1/random.randint(60, 180)
     def update(self):
         self.drand = random.randint(12, 60)
         self.frand = random.randint(3, 12)
         self.itv = random.randint(1, 6)
-        self.a = random.randint(1, 16)
-        self.b = random.randint(1, 16)
+        self.a = random.randint(1, 24)
+        self.b = random.randint(1, 24)
         self.c = random.randint(1, 6)
         self.d = random.randint(1, 6)
         self.e = random.randint(1, 16)
         self.g = random.randint(1, 36)
         self.color = random.randint(2, 15)
-        self.dt = 2*math.pi/random.randint(24, 72)
-        self.dv = 1/random.randint(20, 50)
+        self.dt = 2*pi/random.randint(24, 72)
+        self.dv = 1/random.randint(60, 180)
 
 class Me:
     def __init__(self):
@@ -675,8 +710,8 @@ class Bullet:
         self.new = True
         self.no = 0
     def update(self):
-        self.x += self.v*math.cos(self.t)
-        self.y += self.v*math.sin(self.t)
+        self.x += self.v*cos(self.t)
+        self.y += self.v*sin(self.t)
         self.count += 1
     def speedctr(self, v):
         self.v = v
