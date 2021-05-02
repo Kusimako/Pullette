@@ -15,7 +15,6 @@ class App:
         pyxel.mouse(True)
         pyxel.image(0).load(0, 0, "assets/me.png")
         pyxel.image(1).load(0, 0, "assets/mom.png")
-
         self.start = True
         self.wait = False
         self.view = False
